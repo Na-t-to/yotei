@@ -727,12 +727,18 @@
       min-width: 0;
       position: relative;
     }
-    .brand-mark { color: var(--muted); font-weight: 850; font-size: 11px; letter-spacing: .04em; margin-top: 4px; }
+    .brand-mark {
+      color: var(--ink);
+      font-weight: 850;
+      font-size: 16px;
+      letter-spacing: -.03em;
+      margin-top: 1px;
+    }
     .event-copy { min-width: 0; }
     .event-title-line {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 14px;
       min-width: 0;
     }
     .event-name {
@@ -748,15 +754,22 @@
     }
     .detail-toggle {
       flex: 0 0 auto;
-      padding: 2px 0;
-      border: 0;
-      background: transparent;
-      color: var(--muted);
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,.68);
+      color: var(--ink);
       font-size: 11px;
       font-weight: 750;
       cursor: pointer;
+      transition: .18s ease;
     }
-    .detail-toggle:hover { color: var(--ink); }
+    .detail-toggle:hover {
+      background: #fff;
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
     .event-detail-popover {
       position: absolute;
       top: calc(100% + 10px);
@@ -888,8 +901,8 @@
       .event-brand { width: 100%; padding: 0 2px; }
       .event-copy { width: calc(100% - 30px); }
       .event-name { max-width: 100%; font-size: 18px; }
-      .event-title-line { align-items: baseline; }
-      .detail-toggle { font-size: 10px; }
+      .event-title-line { align-items: center; gap: 12px; }
+      .detail-toggle { height: 30px; padding: 0 9px; font-size: 10px; }
       .event-detail-popover {
         position: fixed;
         top: 86px;
