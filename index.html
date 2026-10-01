@@ -633,6 +633,20 @@
     }
     .create-title-input:focus { box-shadow: none; background: transparent; border: 0; }
     .create-title-input::placeholder { color: #c6c6c2; }
+    .create-detail-wrap {
+      padding: 0 34px 24px;
+    }
+    .create-detail-input {
+      min-height: 86px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.46);
+      font-size: 13px;
+      line-height: 1.65;
+      resize: vertical;
+    }
+    .create-detail-input::placeholder { color: #aaa; }
     .create-dates {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -678,17 +692,33 @@
       text-align: center;
     }
 
-    .event-brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-    .brand-mark { color: var(--muted); font-weight: 850; font-size: 11px; letter-spacing: .04em; }
+    .event-brand { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+    .brand-mark { color: var(--muted); font-weight: 850; font-size: 11px; letter-spacing: .04em; margin-top: 4px; }
+    .event-copy { min-width: 0; }
     .event-name {
+      display: block;
       min-width: 0;
-      max-width: 360px;
+      max-width: 420px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 17px;
       font-weight: 850;
       letter-spacing: -.025em;
+    }
+    .event-detail {
+      max-width: 560px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .nav-primary, .nav-month {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .multi-mobile { display: none; }
 
@@ -704,8 +734,7 @@
       font-weight: 750;
       font-size: 12px;
     }
-    .share-btn { padding: 0 13px; }
-    .new-btn { width: 38px; font-size: 18px; }
+    .share-btn, .new-btn { padding: 0 13px; }
     .share-btn:hover, .new-btn:hover { transform: translateY(-1px); background: #fff; border-color: var(--line-strong); }
     .day.disabled { opacity: .20; cursor: default; }
     .day.disabled:hover { background: transparent; }
@@ -761,30 +790,44 @@
     @media (max-width: 760px) {
       .topbar { align-items: flex-start; gap: 10px; }
       .nav { justify-content: flex-end; flex-wrap: wrap; }
-      .event-name { max-width: 200px; }
+      .event-name { max-width: 260px; }
+      .event-detail { max-width: 360px; }
       .create-view { padding-top: 24px; }
     }
     @media (max-width: 560px) {
       .create-title-wrap { padding: 28px 22px 16px; }
+      .create-detail-wrap { padding: 0 22px 20px; }
+      .create-detail-input { min-height: 76px; }
       .create-dates { grid-template-columns: 1fr; }
       .create-date + .create-date { border-left: 0; border-top: 1px solid var(--line); }
 
       .event-brand { width: 100%; padding: 0 2px; }
-      .event-name { max-width: calc(100vw - 68px); font-size: 18px; }
+      .event-copy { width: calc(100% - 30px); }
+      .event-name { max-width: 100%; font-size: 18px; }
+      .event-detail { max-width: 100%; font-size: 11px; }
       .topbar { flex-direction: column; gap: 8px; }
       .nav {
         width: 100%;
-        display: grid;
-        grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
         gap: 5px;
-        justify-content: stretch;
-        flex-wrap: nowrap;
+      }
+      .nav-primary {
+        display: grid;
+        grid-template-columns: 1fr 1.35fr .75fr;
+        gap: 5px;
+      }
+      .nav-month {
+        display: grid;
+        grid-template-columns: 36px 1fr 36px;
+        gap: 5px;
       }
       .share-btn, .today-btn, .multi-btn, .new-btn, .icon-btn { height: 36px; }
-      .share-btn { padding: 0 10px; }
-      .new-btn, .icon-btn { width: 36px; }
+      .share-btn, .new-btn { padding: 0 7px; font-size: 10px; white-space: nowrap; }
+      .icon-btn { width: 36px; }
       .today-btn { padding: 0 9px; }
-      .multi-btn { min-width: 0; padding: 0 8px; }
+      .multi-btn { min-width: 0; padding: 0 7px; font-size: 10px; }
       .multi-desktop { display: none; }
       .multi-mobile { display: inline; }
     }
@@ -797,6 +840,9 @@
     <form class="create-card" id="createForm">
       <div class="create-title-wrap">
         <input class="create-title-input" id="eventTitleInput" maxlength="80" autocomplete="off" placeholder="タイトル" />
+      </div>
+      <div class="create-detail-wrap">
+        <textarea class="create-detail-input" id="eventDetailInput" maxlength="1000" placeholder="予定の詳細（任意）"></textarea>
       </div>
       <div class="create-dates">
         <div class="create-date">
@@ -817,15 +863,22 @@
     <div class="topbar">
       <div class="event-brand">
         <span class="brand-mark">Aki</span>
-        <span class="event-name" id="eventName"></span>
+        <div class="event-copy">
+          <span class="event-name" id="eventName"></span>
+          <div class="event-detail hidden" id="eventDetail"></div>
+        </div>
       </div>
       <div class="nav">
-        <button class="share-btn" id="share">共有</button>
-        <button class="new-btn" id="newEvent" aria-label="新しい調整">＋</button>
-        <button class="multi-btn" id="multi"><span class="multi-desktop">複数日に予定を入れる</span><span class="multi-mobile">複数入力</span></button>
-        <button class="icon-btn" id="prev" aria-label="前の月">‹</button>
-        <button class="today-btn" id="today">今日</button>
-        <button class="icon-btn" id="next" aria-label="次の月">›</button>
+        <div class="nav-primary">
+          <button class="share-btn" id="share">カレンダーを共有</button>
+          <button class="new-btn" id="newEvent">新しくカレンダーを作る</button>
+          <button class="multi-btn" id="multi"><span class="multi-desktop">複数日に予定を入れる</span><span class="multi-mobile">複数入力</span></button>
+        </div>
+        <div class="nav-month">
+          <button class="icon-btn" id="prev" aria-label="前の月">‹</button>
+          <button class="today-btn" id="today">今日</button>
+          <button class="icon-btn" id="next" aria-label="次の月">›</button>
+        </div>
       </div>
     </div>
 
@@ -987,12 +1040,16 @@
       }
       setLoading(true);
       try {
-        const { data, error } = await db.rpc('aki_get_event', { p_event_id: eventId });
-        if (error) throw error;
-        const meta = Array.isArray(data) ? data[0] : data;
+        let result = await db.rpc('aki_get_event_v2', { p_event_id: eventId });
+        if (result.error) result = await db.rpc('aki_get_event', { p_event_id: eventId });
+        if (result.error) throw result.error;
+        const meta = Array.isArray(result.data) ? result.data[0] : result.data;
         if (!meta) { showFatal('見つかりません', 'URLを確認してください。'); return; }
         eventMeta = meta;
         $('eventName').textContent = meta.title;
+        const detailEl = $('eventDetail');
+        detailEl.textContent = meta.detail || '';
+        detailEl.classList.toggle('hidden', !meta.detail);
         document.title = `${meta.title} · Aki`;
         const start = parseDateKey(meta.start_date);
         cursor = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -1011,16 +1068,24 @@
     $('createForm').addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const title = $('eventTitleInput').value.trim();
+      const detail = $('eventDetailInput').value.trim();
       const start = $('eventStartInput').value;
       const end = $('eventEndInput').value;
       $('createError').textContent = '';
       if (!title || !start || !end) { $('createError').textContent = '入力してください'; return; }
       $('createSubmit').disabled = true;
       try {
-        const { data, error } = await db.rpc('aki_create_event', {
-          p_title: title, p_start_date: start, p_end_date: end
+        let result = await db.rpc('aki_create_event_v2', {
+          p_title: title, p_detail: detail || null, p_start_date: start, p_end_date: end
         });
-        if (error) throw error;
+        if (result.error) {
+          if (detail) throw new Error('予定の詳細を使うにはSupabaseの更新が必要です');
+          result = await db.rpc('aki_create_event', {
+            p_title: title, p_start_date: start, p_end_date: end
+          });
+        }
+        if (result.error) throw result.error;
+        const data = result.data;
         const id = typeof data === 'string' ? data : data?.event_id || data?.[0]?.event_id;
         if (!id) throw new Error('event id missing');
         const url = new URL(location.href);
