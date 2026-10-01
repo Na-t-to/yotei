@@ -30,3 +30,12 @@
 `https://<user>.github.io/<repo>/?e=<uuid>`
 
 そのURLを共有すれば、全員が同じ予定を読み書きできる。
+
+## 自動keepalive
+
+`.github/workflows/keepalive.yml` がSupabaseの停止対策を行う。
+
+- 1日3回、読み取りRPCに軽いリクエストを送る（データは増えない）。
+- 毎月1日に `.keepalive` を更新してコミットし、公開リポジトリが60日無活動でscheduled workflowを自動停止するのを避ける。
+- GitHub Actionsの手動実行（workflow_dispatch）にも対応。
+
