@@ -636,17 +636,45 @@
     .create-detail-wrap {
       padding: 0 34px 24px;
     }
-    .create-detail-input {
-      min-height: 86px;
-      padding: 13px 14px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: rgba(255,255,255,.46);
-      font-size: 13px;
-      line-height: 1.65;
-      resize: vertical;
+    .create-detail-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
     }
-    .create-detail-input::placeholder { color: #aaa; }
+    .create-detail-fields {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .create-detail-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .create-detail-field label {
+      display: block;
+      margin: 0 0 6px 2px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .create-detail-field input,
+    .create-detail-field textarea {
+      background: rgba(255,255,255,.48);
+    }
+    .create-detail-field textarea {
+      min-height: 72px;
+      resize: vertical;
+      line-height: 1.6;
+    }
     .create-dates {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -692,7 +720,13 @@
       text-align: center;
     }
 
-    .event-brand { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+    .event-brand {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+      position: relative;
+    }
     .brand-mark { color: var(--muted); font-weight: 850; font-size: 11px; letter-spacing: .04em; margin-top: 4px; }
     .event-copy { min-width: 0; }
     .event-title-line {
@@ -723,15 +757,48 @@
       cursor: pointer;
     }
     .detail-toggle:hover { color: var(--ink); }
-    .event-detail {
-      max-width: 560px;
-      margin-top: 8px;
+    .event-detail-popover {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 20px;
+      z-index: 45;
+      width: min(420px, calc(100vw - 28px));
+      max-height: min(520px, 70vh);
+      overflow-y: auto;
+      padding: 16px 18px;
+      border: 1px solid var(--line-strong);
+      border-radius: 16px;
+      background: rgba(255,255,255,.97);
+      box-shadow: 0 18px 54px rgba(20,20,20,.14);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .event-detail-list {
+      display: grid;
+      gap: 12px;
+    }
+    .event-detail-row {
+      display: grid;
+      gap: 3px;
+    }
+    .event-detail-label {
       color: var(--ink);
-      font-size: 12.5px;
-      line-height: 1.65;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+    .event-detail-value {
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.6;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+    .event-detail-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .event-detail-link:hover { text-decoration: underline; }
     .nav-primary, .nav-month {
       display: flex;
       align-items: center;
@@ -814,7 +881,7 @@
     @media (max-width: 560px) {
       .create-title-wrap { padding: 28px 22px 16px; }
       .create-detail-wrap { padding: 0 22px 20px; }
-      .create-detail-input { min-height: 76px; }
+      .create-detail-two { grid-template-columns: 1fr; }
       .create-dates { grid-template-columns: 1fr; }
       .create-date + .create-date { border-left: 0; border-top: 1px solid var(--line); }
 
@@ -823,7 +890,14 @@
       .event-name { max-width: 100%; font-size: 18px; }
       .event-title-line { align-items: baseline; }
       .detail-toggle { font-size: 10px; }
-      .event-detail { max-width: 100%; font-size: 12px; }
+      .event-detail-popover {
+        position: fixed;
+        top: 86px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: calc(100vh - 110px);
+      }
       .topbar { flex-direction: column; gap: 8px; }
       .nav {
         width: 100%;
@@ -861,7 +935,31 @@
         <input class="create-title-input" id="eventTitleInput" maxlength="80" autocomplete="off" placeholder="タイトル" />
       </div>
       <div class="create-detail-wrap">
-        <textarea class="create-detail-input" id="eventDetailInput" maxlength="1000" placeholder="予定の詳細（任意）"></textarea>
+        <button class="create-detail-toggle" id="createDetailToggle" type="button" aria-expanded="false">予定の詳細（任意）⌄</button>
+        <div class="create-detail-fields hidden" id="createDetailFields">
+          <div class="create-detail-two">
+            <div class="create-detail-field">
+              <label>場所</label>
+              <input id="eventPlaceInput" maxlength="100" autocomplete="off" placeholder="例：新宿" />
+            </div>
+            <div class="create-detail-field">
+              <label>時間</label>
+              <input id="eventTimeInput" maxlength="80" autocomplete="off" placeholder="例：19:00ごろ" />
+            </div>
+          </div>
+          <div class="create-detail-field">
+            <label>何をする</label>
+            <textarea id="eventActivityInput" maxlength="200" placeholder="例：飲み会"></textarea>
+          </div>
+          <div class="create-detail-field">
+            <label>参考URL</label>
+            <input id="eventReferenceUrlInput" type="url" maxlength="500" inputmode="url" placeholder="https://..." />
+          </div>
+          <div class="create-detail-field">
+            <label>その他</label>
+            <textarea id="eventOtherInput" maxlength="500" placeholder="補足があれば"></textarea>
+          </div>
+        </div>
       </div>
       <div class="create-dates">
         <div class="create-date">
@@ -887,7 +985,9 @@
             <span class="event-name" id="eventName"></span>
             <button class="detail-toggle hidden" id="detailToggle" type="button" aria-expanded="false">詳細⌄</button>
           </div>
-          <div class="event-detail hidden" id="eventDetail"></div>
+          <div class="event-detail-popover hidden" id="eventDetailPopover" role="dialog" aria-label="予定の詳細">
+            <div class="event-detail-list" id="eventDetailList"></div>
+          </div>
         </div>
       </div>
       <div class="nav">
@@ -1062,20 +1162,16 @@
       }
       setLoading(true);
       try {
-        let result = await db.rpc('aki_get_event_v2', { p_event_id: eventId });
+        let result = await db.rpc('aki_get_event_v3', { p_event_id: eventId });
+        if (result.error) result = await db.rpc('aki_get_event_v2', { p_event_id: eventId });
         if (result.error) result = await db.rpc('aki_get_event', { p_event_id: eventId });
         if (result.error) throw result.error;
         const meta = Array.isArray(result.data) ? result.data[0] : result.data;
         if (!meta) { showFatal('見つかりません', 'URLを確認してください。'); return; }
         eventMeta = meta;
+        if (!eventMeta.other && eventMeta.detail) eventMeta.other = eventMeta.detail;
         $('eventName').textContent = meta.title;
-        const detailEl = $('eventDetail');
-        const detailToggle = $('detailToggle');
-        detailEl.textContent = meta.detail || '';
-        detailEl.classList.add('hidden');
-        detailToggle.classList.toggle('hidden', !meta.detail);
-        detailToggle.textContent = '詳細⌄';
-        detailToggle.setAttribute('aria-expanded', 'false');
+        renderEventDetails();
         document.title = `${meta.title} · Aki`;
         const start = parseDateKey(meta.start_date);
         cursor = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -1094,21 +1190,38 @@
     $('createForm').addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const title = $('eventTitleInput').value.trim();
-      const detail = $('eventDetailInput').value.trim();
+      const place = $('eventPlaceInput').value.trim();
+      const eventTime = $('eventTimeInput').value.trim();
+      const activity = $('eventActivityInput').value.trim();
+      const referenceUrl = $('eventReferenceUrlInput').value.trim();
+      const other = $('eventOtherInput').value.trim();
       const start = $('eventStartInput').value;
       const end = $('eventEndInput').value;
       $('createError').textContent = '';
       if (!title || !start || !end) { $('createError').textContent = '入力してください'; return; }
       $('createSubmit').disabled = true;
       try {
-        let result = await db.rpc('aki_create_event_v2', {
-          p_title: title, p_detail: detail || null, p_start_date: start, p_end_date: end
+        const hasDetails = Boolean(place || eventTime || activity || referenceUrl || other);
+        let result = await db.rpc('aki_create_event_v3', {
+          p_title: title,
+          p_place: place || null,
+          p_event_time: eventTime || null,
+          p_activity: activity || null,
+          p_reference_url: referenceUrl || null,
+          p_other: other || null,
+          p_start_date: start,
+          p_end_date: end
         });
         if (result.error) {
-          if (detail) throw new Error('予定の詳細を使うにはSupabaseの更新が必要です');
-          result = await db.rpc('aki_create_event', {
-            p_title: title, p_start_date: start, p_end_date: end
+          if (hasDetails) throw new Error('予定の詳細を使うにはSupabaseの更新が必要です');
+          result = await db.rpc('aki_create_event_v2', {
+            p_title: title, p_detail: null, p_start_date: start, p_end_date: end
           });
+          if (result.error) {
+            result = await db.rpc('aki_create_event', {
+              p_title: title, p_start_date: start, p_end_date: end
+            });
+          }
         }
         if (result.error) throw result.error;
         const data = result.data;
@@ -1336,6 +1449,67 @@
       }
     }
 
+    function hasEventDetails(){
+      if (!eventMeta) return false;
+      return Boolean(eventMeta.place || eventMeta.event_time || eventMeta.activity || eventMeta.reference_url || eventMeta.other || eventMeta.detail);
+    }
+
+    function safeHttpUrl(value){
+      try {
+        const u = new URL(value);
+        return /^https?:$/.test(u.protocol) ? u.toString() : null;
+      } catch { return null; }
+    }
+
+    function renderEventDetails(){
+      const toggle = $('detailToggle');
+      const popover = $('eventDetailPopover');
+      const list = $('eventDetailList');
+      list.innerHTML = '';
+      popover.classList.add('hidden');
+      toggle.textContent = '詳細⌄';
+      toggle.setAttribute('aria-expanded', 'false');
+
+      const rows = [
+        ['場所', eventMeta?.place],
+        ['時間', eventMeta?.event_time],
+        ['何をする', eventMeta?.activity],
+        ['参考URL', eventMeta?.reference_url],
+        ['その他', eventMeta?.other || eventMeta?.detail]
+      ].filter(([, value]) => String(value || '').trim());
+
+      toggle.classList.toggle('hidden', rows.length === 0);
+
+      for (const [label, value] of rows) {
+        const row = document.createElement('div');
+        row.className = 'event-detail-row';
+        const labelEl = document.createElement('div');
+        labelEl.className = 'event-detail-label';
+        labelEl.textContent = label;
+        const valueEl = document.createElement('div');
+        valueEl.className = 'event-detail-value';
+
+        if (label === '参考URL') {
+          const safe = safeHttpUrl(String(value));
+          if (safe) {
+            const a = document.createElement('a');
+            a.className = 'event-detail-link';
+            a.href = safe;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = String(value);
+            valueEl.appendChild(a);
+          } else {
+            valueEl.textContent = String(value);
+          }
+        } else {
+          valueEl.textContent = String(value);
+        }
+        row.append(labelEl, valueEl);
+        list.appendChild(row);
+      }
+    }
+
     async function shareEvent(){
       const title = eventMeta?.title || '予定';
       const parseKey = (key) => {
@@ -1374,13 +1548,22 @@
       }, 15000);
     }
 
-    $('detailToggle').addEventListener('click', () => {
-      const detailEl = $('eventDetail');
-      const open = detailEl.classList.contains('hidden');
-      detailEl.classList.toggle('hidden', !open);
+    $('createDetailToggle').addEventListener('click', () => {
+      const fields = $('createDetailFields');
+      const open = fields.classList.contains('hidden');
+      fields.classList.toggle('hidden', !open);
+      $('createDetailToggle').textContent = open ? '予定の詳細（任意）⌃' : '予定の詳細（任意）⌄';
+      $('createDetailToggle').setAttribute('aria-expanded', String(open));
+    });
+    $('detailToggle').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const popover = $('eventDetailPopover');
+      const open = popover.classList.contains('hidden');
+      popover.classList.toggle('hidden', !open);
       $('detailToggle').textContent = open ? '詳細⌃' : '詳細⌄';
       $('detailToggle').setAttribute('aria-expanded', String(open));
     });
+    $('eventDetailPopover').addEventListener('click', ev => ev.stopPropagation());
     $('timeToggle').addEventListener('click', () => setTimeMode(!timeMode));
     $('save').addEventListener('click', addEntries);
     $('multi').addEventListener('click', toggleMultiMode);
@@ -1392,7 +1575,22 @@
     $('share').addEventListener('click', shareEvent);
     $('newEvent').addEventListener('click', newEvent);
     scrim.addEventListener('click', closePanel);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+    document.addEventListener('click', () => {
+      const popover = $('eventDetailPopover');
+      if (!popover.classList.contains('hidden')) {
+        popover.classList.add('hidden');
+        $('detailToggle').textContent = '詳細⌄';
+        $('detailToggle').setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closePanel();
+        $('eventDetailPopover').classList.add('hidden');
+        $('detailToggle').textContent = '詳細⌄';
+        $('detailToggle').setAttribute('aria-expanded', 'false');
+      }
+    });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && eventId) loadEntries({silent:true}); });
 
     init();
