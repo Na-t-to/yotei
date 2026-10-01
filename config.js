@@ -1,4 +1,4 @@
 window.AKI_CONFIG = {
-  supabaseUrl: 'YOUR_SUPABASE_URL',
-  supabasePublishableKey: 'YOUR_SUPABASE_PUBLISHABLE_KEY'
+  supabaseUrl: 'https://dvxjjdulawrpqumfooce.supabase.co',
+  supabasePublishableKey: 'sb_publishable_3v1cFe5atIApY2iEbr_Szg_tqm_401X'
 };
