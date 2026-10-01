@@ -1247,15 +1247,23 @@
 
     async function shareEvent(){
       const title = eventMeta?.title || '予定';
-      const formatShareDate = (key) => {
+      const parseKey = (key) => {
         const [y,m,d] = String(key || '').split('-').map(Number);
-        if (!y || !m || !d) return '';
-        return `${m}/${d}`;
+        return { y, m, d };
       };
-      const start = formatShareDate(eventMeta?.start_date);
-      const end = formatShareDate(eventMeta?.end_date);
-      const range = start && end ? `${start}〜${end}のうち、行ける日だけ入力してください！` : '行ける日だけ入力してください！';
-      const text = `${title}\n${range}\n${location.href}`;
+      const startDate = parseKey(eventMeta?.start_date);
+      const endDate = parseKey(eventMeta?.end_date);
+      const crossesYear = startDate.y && endDate.y && startDate.y !== endDate.y;
+      const formatDate = ({ y, m, d }) => {
+        if (!y || !m || !d) return '';
+        return crossesYear ? `【${y}年${m}月${d}日】` : `【${m}月${d}日】`;
+      };
+      const startText = formatDate(startDate);
+      const endText = formatDate(endDate);
+      const rangeLine = startText && endText
+        ? `${startText}～${endText}のうち、行ける日だけ入力してください！`
+        : '行ける日だけ入力してください！';
+      const text = `イベント名：${title}\n${rangeLine}\n${location.href}`;
       try {
         await navigator.clipboard.writeText(text);
         showToast('共有文をコピーしました');
@@ -1263,6 +1271,7 @@
         window.prompt('共有', text);
       }
     }
+
     function newEvent(){
       const url = new URL(location.href); url.search = ''; url.hash = '';
       location.href = url.toString();
