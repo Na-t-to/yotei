@@ -1247,7 +1247,15 @@
 
     async function shareEvent(){
       const title = eventMeta?.title || '予定';
-      const text = `${title}\nカレンダーに行ける日を入力してください！\n${location.href}`;
+      const formatShareDate = (key) => {
+        const [y,m,d] = String(key || '').split('-').map(Number);
+        if (!y || !m || !d) return '';
+        return `${m}/${d}`;
+      };
+      const start = formatShareDate(eventMeta?.start_date);
+      const end = formatShareDate(eventMeta?.end_date);
+      const range = start && end ? `${start}〜${end}のうち、行ける日だけ入力してください！` : '行ける日だけ入力してください！';
+      const text = `${title}\n${range}\n${location.href}`;
       try {
         await navigator.clipboard.writeText(text);
         showToast('共有文をコピーしました');
