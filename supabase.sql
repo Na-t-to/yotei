@@ -3,7 +3,7 @@ create schema if not exists private;
 
 create table if not exists public.aki_events (
   id uuid primary key default gen_random_uuid(),
-  title text not null check (char_length(title) between 1 and 80),
+  title text not null check (char_length(title) between 1 and 30),
   detail text,
   place text,
   event_time text,
@@ -60,8 +60,8 @@ declare
   v_id uuid;
   v_title text := btrim(coalesce(p_title, ''));
 begin
-  if char_length(v_title) < 1 or char_length(v_title) > 80 then
-    raise exception 'タイトルを1〜80文字で入力してください';
+  if char_length(v_title) < 1 or char_length(v_title) > 30 then
+    raise exception 'タイトルを1〜30文字で入力してください';
   end if;
   if p_start_date is null or p_end_date is null or p_end_date < p_start_date then
     raise exception '日付を確認してください';
@@ -298,8 +298,8 @@ declare
   v_title text := btrim(coalesce(p_title, ''));
   v_detail text := nullif(btrim(coalesce(p_detail, '')), '');
 begin
-  if char_length(v_title) < 1 or char_length(v_title) > 80 then
-    raise exception 'タイトルを1〜80文字で入力してください';
+  if char_length(v_title) < 1 or char_length(v_title) > 30 then
+    raise exception 'タイトルを1〜30文字で入力してください';
   end if;
   if v_detail is not null and char_length(v_detail) > 1000 then
     raise exception '予定の詳細は1000文字以内にしてください';
@@ -395,8 +395,8 @@ declare
   v_reference_url text := nullif(btrim(coalesce(p_reference_url, '')), '');
   v_other text := nullif(btrim(coalesce(p_other, '')), '');
 begin
-  if char_length(v_title) < 1 or char_length(v_title) > 80 then
-    raise exception 'タイトルを1〜80文字で入力してください';
+  if char_length(v_title) < 1 or char_length(v_title) > 30 then
+    raise exception 'タイトルを1〜30文字で入力してください';
   end if;
   if v_place is not null and char_length(v_place) > 100 then
     raise exception '場所は100文字以内にしてください';
