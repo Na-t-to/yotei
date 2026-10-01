@@ -272,6 +272,31 @@
       padding-left: 27px;
     }
 
+    .mobile-avatars {
+      display: none;
+      align-items: center;
+      min-height: 24px;
+      padding-left: 2px;
+    }
+
+    .mobile-avatars .avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 10px;
+      border: 2px solid rgba(255,255,255,.94);
+      box-shadow: none;
+    }
+
+    .mobile-avatars .avatar + .avatar { margin-left: -6px; }
+
+    .mobile-more {
+      margin-left: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
     .scrim {
       position: fixed;
       inset: 0;
@@ -527,20 +552,50 @@
     }
 
     @media (max-width: 560px) {
+      .app { width: calc(100% - 10px); padding-top: 8px; }
       .topbar { margin-bottom: 8px; }
-      .calendar-shell { border-radius: 22px; }
-      .calendar-head { padding: 20px 16px 16px; }
+      .calendar-shell { border-radius: 20px; }
+      .calendar-head { padding: 16px 14px 13px; }
+      .month-title .month { font-size: 32px; }
+      .month-title .year { font-size: 12px; }
       .legend { display: none; }
-      .dow span { padding: 11px 2px 9px; font-size: 9px; text-align: center; }
-      .day { min-height: 86px; padding: 6px 5px; }
+      .dow { padding: 0 3px; }
+      .dow span { padding: 10px 2px 8px; font-size: 9px; text-align: center; }
+      .grid { padding: 0 3px 6px; }
+      .day { min-height: 74px; padding: 6px 5px; }
+      .date-line { margin-bottom: 8px; }
       .date-num { width: 26px; height: 26px; font-size: 12px; }
-      .count { height: 20px; min-width: 20px; font-size: 9px; padding: 0 6px; }
-      .entries { gap: 4px; }
-      .entry-mini:nth-child(n+3) { display: none; }
-      .entry-name { font-size: 10px; }
-      .more { padding-left: 0; font-size: 9px; }
-      .panel-head { padding: 20px 18px 16px; }
-      .panel-body { padding: 16px 18px 24px; }
+      .count {
+        height: 20px;
+        min-width: 32px;
+        font-size: 9px;
+        padding: 0 6px;
+        white-space: nowrap;
+      }
+      .entries, .more { display: none; }
+      .mobile-avatars { display: flex; }
+
+      .panel {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: auto;
+        max-height: 88vh;
+        border-left: 0;
+        border-top: 1px solid rgba(0,0,0,.07);
+        border-radius: 24px 24px 0 0;
+        transform: translateY(104%);
+      }
+      .panel.on { transform: translateY(0); }
+      .panel-head { padding: 18px 18px 14px; }
+      .panel-date { font-size: 24px; }
+      .panel-body {
+        padding: 14px 18px 24px;
+        max-height: calc(88vh - 64px);
+        overflow-y: auto;
+      }
     }
 
     .hidden { display: none !important; }
@@ -635,6 +690,8 @@
       font-weight: 850;
       letter-spacing: -.025em;
     }
+    .multi-mobile { display: none; }
+
     .share-btn, .new-btn {
       border: 1px solid var(--line);
       background: rgba(255,255,255,.68);
@@ -711,11 +768,25 @@
       .create-title-wrap { padding: 28px 22px 16px; }
       .create-dates { grid-template-columns: 1fr; }
       .create-date + .create-date { border-left: 0; border-top: 1px solid var(--line); }
-      .event-brand { width: 100%; }
-      .topbar { flex-direction: column; }
-      .nav { width: 100%; justify-content: flex-start; }
-      .multi-btn { flex: 1 1 auto; }
-      .share-btn { order: -1; }
+
+      .event-brand { width: 100%; padding: 0 2px; }
+      .event-name { max-width: calc(100vw - 68px); font-size: 18px; }
+      .topbar { flex-direction: column; gap: 8px; }
+      .nav {
+        width: 100%;
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
+        gap: 5px;
+        justify-content: stretch;
+        flex-wrap: nowrap;
+      }
+      .share-btn, .today-btn, .multi-btn, .new-btn, .icon-btn { height: 36px; }
+      .share-btn { padding: 0 10px; }
+      .new-btn, .icon-btn { width: 36px; }
+      .today-btn { padding: 0 9px; }
+      .multi-btn { min-width: 0; padding: 0 8px; }
+      .multi-desktop { display: none; }
+      .multi-mobile { display: inline; }
     }
 
   </style>
@@ -749,9 +820,9 @@
         <span class="event-name" id="eventName"></span>
       </div>
       <div class="nav">
-        <button class="new-btn" id="newEvent" aria-label="新しい調整">＋</button>
         <button class="share-btn" id="share">共有</button>
-        <button class="multi-btn" id="multi">複数日に予定を入れる</button>
+        <button class="new-btn" id="newEvent" aria-label="新しい調整">＋</button>
+        <button class="multi-btn" id="multi"><span class="multi-desktop">複数日に予定を入れる</span><span class="multi-mobile">複数入力</span></button>
         <button class="icon-btn" id="prev" aria-label="前の月">‹</button>
         <button class="today-btn" id="today">今日</button>
         <button class="icon-btn" id="next" aria-label="次の月">›</button>
@@ -1015,14 +1086,22 @@
               ${e.allDay ? '' : `<div class="entry-time">${esc(e.from || '')}${e.to ? `–${esc(e.to)}` : ''}</div>`}
             </div>
           </div>`).join('');
+        const people = [...new Set(list.map(e => e.name.trim()).filter(Boolean))];
+        const mobileAvatars = people.slice(0,3).map(name => `
+          <div class="avatar" style="--avatar:${colorFor(name)}">${esc(initials(name))}</div>
+        `).join('');
 
         cell.innerHTML = `
           <div class="date-line">
             <div class="date-num">${d.getDate()}</div>
-            <div class="count ${list.length ? 'on':''}">${list.length}</div>
+            <div class="count ${people.length ? 'on':''}">${people.length}人</div>
           </div>
           <div class="entries">${visible}</div>
           ${list.length > 3 ? `<div class="more">+${list.length-3}</div>` : ''}
+          <div class="mobile-avatars">
+            ${mobileAvatars}
+            ${people.length > 3 ? `<span class="mobile-more">+${people.length-3}</span>` : ''}
+          </div>
         `;
         cell.addEventListener('click', () => {
           if (!enabled) return;
@@ -1167,11 +1246,23 @@
     }
 
     async function shareEvent(){
+      const title = eventMeta?.title || '予定';
+      const text = `${title}\nカレンダーに行ける日を入力してください！\n${location.href}`;
       try {
-        await navigator.clipboard.writeText(location.href);
-        showToast('URLをコピーしました');
-      } catch {
-        window.prompt('URL', location.href);
+        if (navigator.share) {
+          await navigator.share({ text });
+          return;
+        }
+        await navigator.clipboard.writeText(text);
+        showToast('共有文をコピーしました');
+      } catch (e) {
+        if (e?.name === 'AbortError') return;
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('共有文をコピーしました');
+        } catch {
+          window.prompt('共有', text);
+        }
       }
     }
     function newEvent(){
