@@ -1249,20 +1249,10 @@
       const title = eventMeta?.title || '予定';
       const text = `${title}\nカレンダーに行ける日を入力してください！\n${location.href}`;
       try {
-        if (navigator.share) {
-          await navigator.share({ text });
-          return;
-        }
         await navigator.clipboard.writeText(text);
         showToast('共有文をコピーしました');
-      } catch (e) {
-        if (e?.name === 'AbortError') return;
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast('共有文をコピーしました');
-        } catch {
-          window.prompt('共有', text);
-        }
+      } catch {
+        window.prompt('共有', text);
       }
     }
     function newEvent(){
