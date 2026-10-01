@@ -31,8 +31,8 @@ declare
   v_reference_url text := nullif(btrim(coalesce(p_reference_url, '')), '');
   v_other text := nullif(btrim(coalesce(p_other, '')), '');
 begin
-  if char_length(v_title) < 1 or char_length(v_title) > 80 then
-    raise exception 'タイトルを1〜80文字で入力してください';
+  if char_length(v_title) < 1 or char_length(v_title) > 30 then
+    raise exception 'タイトルを1〜30文字で入力してください';
   end if;
   if v_place is not null and char_length(v_place) > 100 then
     raise exception '場所は100文字以内にしてください';
