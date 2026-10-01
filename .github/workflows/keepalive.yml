@@ -1,0 +1,42 @@
+name: Keep Supabase active
+
+on:
+  schedule:
+    - cron: '17 1,9,17 * * *'
+    - cron: '43 2 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Ping Supabase database
+        env:
+          SUPABASE_URL: https://dvxjjdulawrpqumfooce.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_3v1cFe5atIApY2iEbr_Szg_tqm_401X
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output /tmp/aki-keepalive.json --write-out '%{http_code}'             --request POST             "$SUPABASE_URL/rest/v1/rpc/aki_get_event"             --header "apikey: $SUPABASE_PUBLISHABLE_KEY"             --header "Content-Type: application/json"             --data '{"p_event_id":"00000000-0000-0000-0000-000000000000"}')"
+          cat /tmp/aki-keepalive.json
+          echo
+          echo "HTTP $status"
+          test "$status" -ge 200
+          test "$status" -lt 300
+
+      - name: Check out repository for monthly heartbeat
+        if: github.event.schedule == '43 2 1 * *'
+        uses: actions/checkout@v4
+
+      - name: Keep scheduled workflows enabled
+        if: github.event.schedule == '43 2 1 * *'
+        run: |
+          set -euo pipefail
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > .keepalive
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .keepalive
+          git commit -m 'chore: keep scheduled workflows active'
+          git push
