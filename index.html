@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aki</title>
+  <style>
+    :root {
+      --bg: #f3f2ee;
+      --surface: rgba(255,255,255,.78);
+      --surface-strong: #fff;
+      --ink: #151515;
+      --muted: #898989;
+      --line: rgba(18,18,18,.09);
+      --line-strong: rgba(18,18,18,.16);
+      --accent: #2f5bff;
+      --accent-soft: rgba(47,91,255,.09);
+      --shadow: 0 24px 70px rgba(20,20,20,.10), 0 3px 12px rgba(20,20,20,.05);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255,255,255,.95), transparent 34%),
+        radial-gradient(circle at 100% 10%, rgba(215,221,255,.45), transparent 30%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      letter-spacing: .01em;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      min-height: 100%;
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+
+    .brand {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -.03em;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn, .today-btn, .multi-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.68);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      height: 38px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .icon-btn { width: 38px; font-size: 18px; }
+    .today-btn, .multi-btn { padding: 0 14px; font-weight: 700; font-size: 12px; }
+    .icon-btn:hover, .today-btn:hover, .multi-btn:hover { transform: translateY(-1px); border-color: var(--line-strong); background: #fff; }
+    .multi-btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+    .calendar-shell {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      overflow: hidden;
+    }
+
+    .calendar-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 30px 32px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .month-title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .month-title .month {
+      font-size: clamp(32px, 5vw, 54px);
+      font-weight: 780;
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+
+    .month-title .year {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .legend {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .legend-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); }
+
+    .dow {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 0 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dow span {
+      padding: 14px 10px 12px;
+      text-align: right;
+      font-size: 11px;
+      font-weight: 760;
+      color: #9a9a9a;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 0 20px 20px;
+    }
+
+    .day {
+      min-height: 142px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 12px 10px;
+      position: relative;
+      cursor: pointer;
+      background: transparent;
+      transition: background .16s ease, transform .16s ease;
+      overflow: hidden;
+    }
+
+    .day:nth-child(7n) { border-right: 0; }
+    .day:hover { background: rgba(255,255,255,.65); }
+    .day.outside { opacity: .34; }
+    .day.selected {
+      background: rgba(47,91,255,.08);
+      box-shadow: inset 0 0 0 2px rgba(47,91,255,.55);
+      border-radius: 16px;
+    }
+    .day.selected .date-num {
+      background: var(--accent);
+      color: #fff;
+    }
+    .day.today::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(47,91,255,.28);
+      border-radius: 16px;
+      pointer-events: none;
+    }
+
+    .date-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .date-num {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      font-weight: 760;
+      font-size: 13px;
+    }
+
+    .day.today .date-num {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .count {
+      min-width: 26px;
+      height: 24px;
+      border-radius: 999px;
+      display: none;
+      place-items: center;
+      padding: 0 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .count.on { display: grid; }
+
+    .entries {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .entry-mini {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 7px;
+      align-items: center;
+      min-width: 0;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--avatar, #555);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+      flex: 0 0 auto;
+    }
+
+    .entry-text { min-width: 0; }
+    .entry-name {
+      font-weight: 760;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .entry-time {
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .more {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      padding-left: 27px;
+    }
+
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(20,20,20,.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 20;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+
+    .panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(440px, 100%);
+      height: 100%;
+      z-index: 30;
+      background: rgba(249,249,247,.96);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      border-left: 1px solid rgba(0,0,0,.07);
+      box-shadow: -24px 0 70px rgba(15,15,15,.12);
+      transform: translateX(104%);
+      transition: transform .3s cubic-bezier(.22,1,.36,1);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel.on { transform: translateX(0); }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-date {
+      font-size: 28px;
+      font-weight: 780;
+      letter-spacing: -.04em;
+    }
+
+    .close {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .panel-body {
+      overflow-y: auto;
+      padding: 18px 24px 28px;
+    }
+
+    .input-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 8px 30px rgba(20,20,20,.05);
+    }
+
+    .field + .field { margin-top: 12px; }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0 !important;
+      transform: translateY(-4px);
+      transition: max-height .22s ease, opacity .18s ease, transform .22s ease, margin .22s ease;
+    }
+    .field-row.on {
+      max-height: 82px;
+      opacity: 1;
+      margin-top: 12px !important;
+      transform: translateY(0);
+    }
+
+    .time-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 10px 0 0 2px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .time-toggle::before {
+      content: "+";
+      display: grid;
+      place-items: center;
+      width: 16px;
+      height: 16px;
+      border: 1px solid rgba(47,91,255,.18);
+      border-radius: 999px;
+      background: var(--accent-soft);
+      font-size: 12px;
+      line-height: 1;
+      transition: transform .2s ease;
+    }
+    .time-toggle.on::before { transform: rotate(45deg); }
+
+    .field label {
+      display: block;
+      margin: 0 0 6px 2px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .06em;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #f7f7f5;
+      color: var(--ink);
+      border-radius: 12px;
+      outline: none;
+      padding: 12px 13px;
+      transition: border .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    input { height: 44px; }
+    textarea { min-height: 84px; resize: vertical; }
+    input:focus, textarea:focus {
+      border-color: rgba(47,91,255,.34);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(47,91,255,.07);
+    }
+
+    .save {
+      width: 100%;
+      height: 46px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 13px;
+      background: var(--ink);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .14s ease, opacity .14s ease;
+    }
+    .save:hover { transform: translateY(-1px); }
+    .save:active { transform: translateY(0); opacity: .86; }
+
+    .day-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .day-entry {
+      background: rgba(255,255,255,.72);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .day-entry .avatar { width: 32px; height: 32px; font-size: 11px; }
+    .day-entry .who { font-size: 13px; font-weight: 800; }
+    .day-entry .when { font-size: 12px; margin-top: 3px; color: #555; }
+    .day-entry .note { font-size: 12px; color: var(--muted); margin-top: 6px; white-space: pre-wrap; line-height: 1.5; }
+    .delete {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      background: transparent;
+      color: #aaa;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 18px;
+    }
+    .delete:hover { background: rgba(0,0,0,.04); color: #555; }
+
+    .empty {
+      padding: 18px 0 4px;
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      display: none;
+    }
+    .empty.on { display: block; }
+
+    .panel.batch .day-list,
+    .panel.batch .empty { display: none !important; }
+
+    .batch-dock {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 18;
+      transform: translate(-50%, 18px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 7px 7px 14px;
+      border: 1px solid rgba(255,255,255,.85);
+      border-radius: 999px;
+      background: rgba(20,20,20,.90);
+      color: #fff;
+      box-shadow: 0 18px 50px rgba(20,20,20,.20);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .batch-dock.on { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+    .batch-count { min-width: 34px; font-size: 12px; font-weight: 800; text-align: center; }
+    .batch-open {
+      height: 34px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 999px;
+      background: #fff;
+      color: #111;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 820px) {
+      .app { width: min(100% - 16px, 1180px); padding-top: 12px; }
+      .calendar-head { padding: 24px 20px 18px; }
+      .dow { padding: 0 6px; }
+      .grid { padding: 0 6px 8px; }
+      .day { min-height: 105px; padding: 8px 7px; }
+      .entry-mini { grid-template-columns: 18px 1fr; gap: 5px; }
+      .avatar { width: 18px; height: 18px; }
+      .entry-time { display: none; }
+      .more { padding-left: 23px; }
+      .month-title .month { font-size: 38px; }
+    }
+
+    @media (max-width: 560px) {
+      .topbar { margin-bottom: 8px; }
+      .calendar-shell { border-radius: 22px; }
+      .calendar-head { padding: 20px 16px 16px; }
+      .legend { display: none; }
+      .dow span { padding: 11px 2px 9px; font-size: 9px; text-align: center; }
+      .day { min-height: 86px; padding: 6px 5px; }
+      .date-num { width: 26px; height: 26px; font-size: 12px; }
+      .count { height: 20px; min-width: 20px; font-size: 9px; padding: 0 6px; }
+      .entries { gap: 4px; }
+      .entry-mini:nth-child(n+3) { display: none; }
+      .entry-name { font-size: 10px; }
+      .more { padding-left: 0; font-size: 9px; }
+      .panel-head { padding: 20px 18px 16px; }
+      .panel-body { padding: 16px 18px 24px; }
+    }
+
+    .hidden { display: none !important; }
+    .create-view {
+      width: min(680px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 56px 0 42px;
+    }
+    .create-brand {
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: -.04em;
+      margin: 0 0 18px 4px;
+    }
+    .create-card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.84);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+      overflow: hidden;
+    }
+    .create-title-wrap { padding: 34px 34px 18px; }
+    .create-title-input {
+      height: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      font-size: clamp(34px, 7vw, 58px);
+      font-weight: 780;
+      letter-spacing: -.055em;
+      line-height: 1.05;
+    }
+    .create-title-input:focus { box-shadow: none; background: transparent; border: 0; }
+    .create-title-input::placeholder { color: #c6c6c2; }
+    .create-dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .create-date { padding: 20px 28px 24px; min-width: 0; }
+    .create-date + .create-date { border-left: 1px solid var(--line); }
+    .create-date label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+    .create-date input {
+      height: 42px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      font-weight: 750;
+    }
+    .create-date input:focus { box-shadow: none; border: 0; background: transparent; }
+    .create-actions { padding: 18px; }
+    .create-submit {
+      width: 100%;
+      height: 50px;
+      border: 0;
+      border-radius: 15px;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 850;
+      cursor: pointer;
+    }
+    .create-submit:disabled { opacity: .45; cursor: default; }
+    .create-error {
+      min-height: 20px;
+      padding: 0 24px 18px;
+      color: #b63838;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .event-brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+    .brand-mark { color: var(--muted); font-weight: 850; font-size: 11px; letter-spacing: .04em; }
+    .event-name {
+      min-width: 0;
+      max-width: 360px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+      font-weight: 850;
+      letter-spacing: -.025em;
+    }
+    .share-btn, .new-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.68);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      height: 38px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: .18s ease;
+      font-weight: 750;
+      font-size: 12px;
+    }
+    .share-btn { padding: 0 13px; }
+    .new-btn { width: 38px; font-size: 18px; }
+    .share-btn:hover, .new-btn:hover { transform: translateY(-1px); background: #fff; border-color: var(--line-strong); }
+    .day.disabled { opacity: .20; cursor: default; }
+    .day.disabled:hover { background: transparent; }
+    .loading-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      background: rgba(243,242,238,.76);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .loading-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ink);
+      animation: pulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes pulse { to { transform: scale(1.9); opacity: .3; } }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 80;
+      transform: translate(-50%, 14px);
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(20,20,20,.92);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 750;
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s ease;
+      box-shadow: 0 12px 32px rgba(0,0,0,.16);
+    }
+    .toast.on { opacity: 1; transform: translate(-50%, 0); }
+    .fatal {
+      width: min(560px, calc(100% - 28px));
+      margin: 80px auto;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .fatal strong { display: block; font-size: 18px; margin-bottom: 8px; }
+    .fatal p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+    @media (max-width: 760px) {
+      .topbar { align-items: flex-start; gap: 10px; }
+      .nav { justify-content: flex-end; flex-wrap: wrap; }
+      .event-name { max-width: 200px; }
+      .create-view { padding-top: 24px; }
+    }
+    @media (max-width: 560px) {
+      .create-title-wrap { padding: 28px 22px 16px; }
+      .create-dates { grid-template-columns: 1fr; }
+      .create-date + .create-date { border-left: 0; border-top: 1px solid var(--line); }
+      .event-brand { width: 100%; }
+      .topbar { flex-direction: column; }
+      .nav { width: 100%; justify-content: flex-start; }
+      .multi-btn { flex: 1 1 auto; }
+      .share-btn { order: -1; }
+    }
+
+  </style>
+</head>
+<body>
+  <main class="create-view hidden" id="createView">
+    <div class="create-brand">Aki</div>
+    <form class="create-card" id="createForm">
+      <div class="create-title-wrap">
+        <input class="create-title-input" id="eventTitleInput" maxlength="80" autocomplete="off" placeholder="タイトル" />
+      </div>
+      <div class="create-dates">
+        <div class="create-date">
+          <label>FROM</label>
+          <input id="eventStartInput" type="date" />
+        </div>
+        <div class="create-date">
+          <label>TO</label>
+          <input id="eventEndInput" type="date" />
+        </div>
+      </div>
+      <div class="create-actions"><button class="create-submit" id="createSubmit" type="submit">作る</button></div>
+      <div class="create-error" id="createError"></div>
+    </form>
+  </main>
+
+  <div class="app hidden" id="eventView">
+    <div class="topbar">
+      <div class="event-brand">
+        <span class="brand-mark">Aki</span>
+        <span class="event-name" id="eventName"></span>
+      </div>
+      <div class="nav">
+        <button class="new-btn" id="newEvent" aria-label="新しい調整">＋</button>
+        <button class="share-btn" id="share">共有</button>
+        <button class="multi-btn" id="multi">複数日に予定を入れる</button>
+        <button class="icon-btn" id="prev" aria-label="前の月">‹</button>
+        <button class="today-btn" id="today">今日</button>
+        <button class="icon-btn" id="next" aria-label="次の月">›</button>
+      </div>
+    </div>
+
+    <section class="calendar-shell">
+      <div class="calendar-head">
+        <div class="month-title">
+          <div class="month" id="monthTitle"></div>
+          <div class="year" id="yearTitle"></div>
+        </div>
+        <div class="legend"><span class="legend-dot"></span></div>
+      </div>
+
+      <div class="dow">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div class="grid" id="calendarGrid"></div>
+    </section>
+  </div>
+
+  <div class="batch-dock" id="batchDock">
+    <div class="batch-count" id="batchCount"></div>
+    <button class="batch-open" id="batchOpen">入力</button>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+  <aside class="panel" id="panel" aria-hidden="true">
+    <div class="panel-head">
+      <div class="panel-date" id="panelDate"></div>
+      <button class="close" id="close" aria-label="閉じる">×</button>
+    </div>
+    <div class="panel-body">
+      <div class="input-card">
+        <div class="field">
+          <label>NAME</label>
+          <input id="name" autocomplete="name" placeholder="名前" maxlength="60" />
+        </div>
+        <button class="time-toggle" id="timeToggle" type="button">時間を指定</button>
+        <div class="field field-row" id="timeFields">
+          <div>
+            <label>FROM</label>
+            <input id="from" type="time" value="19:00" />
+          </div>
+          <div>
+            <label>TO</label>
+            <input id="to" type="time" value="22:00" />
+          </div>
+        </div>
+        <div class="field">
+          <label>NOTE</label>
+          <textarea id="note" maxlength="500" placeholder="備考"></textarea>
+        </div>
+        <button class="save" id="save">追加</button>
+      </div>
+
+      <div class="day-list" id="dayList"></div>
+      <div class="empty" id="empty">—</div>
+    </div>
+  </aside>
+
+  <div class="loading-layer hidden" id="loading"><div class="loading-dot"></div></div>
+  <div class="toast" id="toast"></div>
+  <div class="fatal hidden" id="fatal"><strong id="fatalTitle"></strong><p id="fatalBody"></p></div>
+
+  <script src="./config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const NAME_KEY = 'aki.lastName';
+    const OWNED_KEY = 'aki.ownedEntries.v1';
+    const colors = ['#315efb','#111111','#7a5af8','#0f8a6a','#d0612a','#7f8c3a','#a54672','#1f7a9b'];
+    const $ = (id) => document.getElementById(id);
+
+    const cfg = window.AKI_CONFIG || {};
+    const configured = Boolean(
+      cfg.supabaseUrl && cfg.supabasePublishableKey &&
+      !String(cfg.supabaseUrl).includes('YOUR_') &&
+      !String(cfg.supabasePublishableKey).includes('YOUR_')
+    );
+    const db = configured ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    }) : null;
+
+    const grid = $('calendarGrid');
+    const panel = $('panel');
+    const scrim = $('scrim');
+    const dayList = $('dayList');
+    const empty = $('empty');
+    let cursor = new Date();
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    let eventMeta = null;
+    let eventId = new URLSearchParams(location.search).get('e');
+    let entries = [];
+    let selectedKey = null;
+    let timeMode = false;
+    let multiMode = false;
+    let batchPanel = false;
+    const selectedKeys = new Set();
+    let owned = readJson(OWNED_KEY, {});
+    let pollTimer = null;
+    let toastTimer = null;
+
+    function readJson(key, fallback){
+      try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+      catch { return fallback; }
+    }
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function keyOf(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function parseDateKey(key){ const [y,m,d] = key.split('-').map(Number); return new Date(y,m-1,d); }
+    function displayDate(d){ return `${d.getMonth()+1}.${d.getDate()}`; }
+    function initials(name){
+      const t = (name || '').trim();
+      if (!t) return '?';
+      if (/^[A-Za-z ]+$/.test(t)) return t.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+      return t.slice(0,1);
+    }
+    function colorFor(name){
+      let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      return colors[h % colors.length];
+    }
+    function esc(s=''){
+      return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+    function inEventRange(key){ return eventMeta && key >= eventMeta.start_date && key <= eventMeta.end_date; }
+    function setLoading(on){ $('loading').classList.toggle('hidden', !on); }
+    function showToast(text){
+      $('toast').textContent = text;
+      $('toast').classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => $('toast').classList.remove('on'), 1500);
+    }
+    function showFatal(title, body){
+      $('createView').classList.add('hidden');
+      $('eventView').classList.add('hidden');
+      $('fatalTitle').textContent = title;
+      $('fatalBody').textContent = body;
+      $('fatal').classList.remove('hidden');
+    }
+    function rpcErrorText(error){
+      if (!error) return 'エラー';
+      return error.message || error.details || 'エラー';
+    }
+
+    function defaultCreateDates(){
+      const start = new Date();
+      const end = new Date(start); end.setDate(end.getDate() + 30);
+      $('eventStartInput').value = keyOf(start);
+      $('eventEndInput').value = keyOf(end);
+    }
+
+    async function init(){
+      if (!configured) {
+        showFatal('Supabase未設定', 'config.js に Project URL と Publishable key を設定してください。');
+        return;
+      }
+      $('name').value = localStorage.getItem(NAME_KEY) || '';
+      if (!eventId) {
+        defaultCreateDates();
+        $('createView').classList.remove('hidden');
+        return;
+      }
+      setLoading(true);
+      try {
+        const { data, error } = await db.rpc('aki_get_event', { p_event_id: eventId });
+        if (error) throw error;
+        const meta = Array.isArray(data) ? data[0] : data;
+        if (!meta) { showFatal('見つかりません', 'URLを確認してください。'); return; }
+        eventMeta = meta;
+        $('eventName').textContent = meta.title;
+        document.title = `${meta.title} · Aki`;
+        const start = parseDateKey(meta.start_date);
+        cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        $('eventView').classList.remove('hidden');
+        await loadEntries({ silent: true });
+        updateMultiUI();
+        render();
+        startPolling();
+      } catch (e) {
+        showFatal('読み込めませんでした', rpcErrorText(e));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    $('createForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const title = $('eventTitleInput').value.trim();
+      const start = $('eventStartInput').value;
+      const end = $('eventEndInput').value;
+      $('createError').textContent = '';
+      if (!title || !start || !end) { $('createError').textContent = '入力してください'; return; }
+      $('createSubmit').disabled = true;
+      try {
+        const { data, error } = await db.rpc('aki_create_event', {
+          p_title: title, p_start_date: start, p_end_date: end
+        });
+        if (error) throw error;
+        const id = typeof data === 'string' ? data : data?.event_id || data?.[0]?.event_id;
+        if (!id) throw new Error('event id missing');
+        const url = new URL(location.href);
+        url.search = '';
+        url.hash = '';
+        url.searchParams.set('e', id);
+        location.href = url.toString();
+      } catch (e) {
+        $('createError').textContent = rpcErrorText(e);
+        $('createSubmit').disabled = false;
+      }
+    });
+
+    async function loadEntries({silent=false}={}){
+      if (!eventId) return;
+      try {
+        const { data, error } = await db.rpc('aki_list_entries', { p_event_id: eventId });
+        if (error) throw error;
+        entries = (data || []).map(r => ({
+          id: r.id,
+          date: r.date,
+          name: r.name,
+          allDay: r.all_day,
+          from: r.start_time ? String(r.start_time).slice(0,5) : '',
+          to: r.end_time ? String(r.end_time).slice(0,5) : '',
+          note: r.note || '',
+          createdAt: r.created_at
+        }));
+        render();
+        if (selectedKey && panel.classList.contains('on') && !batchPanel) renderDayList();
+      } catch (e) {
+        if (!silent) showToast('更新できませんでした');
+      }
+    }
+
+    function render(){
+      if (!eventMeta || !grid) return;
+      $('monthTitle').textContent = `${cursor.getMonth()+1}月`;
+      $('yearTitle').textContent = cursor.getFullYear();
+      grid.innerHTML = '';
+
+      const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+      const start = new Date(first);
+      start.setDate(1 - first.getDay());
+      const todayKey = keyOf(new Date());
+
+      for (let i=0;i<42;i++){
+        const d = new Date(start); d.setDate(start.getDate()+i);        const key = keyOf(d);
+        const enabled = inEventRange(key);
+        const list = enabled ? entries.filter(e => e.date === key) : [];
+        const cell = document.createElement('div');
+        cell.className = 'day';
+        if (d.getMonth() !== cursor.getMonth()) cell.classList.add('outside');
+        if (key === todayKey) cell.classList.add('today');
+        if (!enabled) cell.classList.add('disabled');
+        if (selectedKeys.has(key)) cell.classList.add('selected');
+
+        const visible = list.slice(0,3).map(e => `
+          <div class="entry-mini">
+            <div class="avatar" style="--avatar:${colorFor(e.name)}">${esc(initials(e.name))}</div>
+            <div class="entry-text">
+              <div class="entry-name">${esc(e.name)}</div>
+              ${e.allDay ? '' : `<div class="entry-time">${esc(e.from || '')}${e.to ? `–${esc(e.to)}` : ''}</div>`}
+            </div>
+          </div>`).join('');
+
+        cell.innerHTML = `
+          <div class="date-line">
+            <div class="date-num">${d.getDate()}</div>
+            <div class="count ${list.length ? 'on':''}">${list.length}</div>
+          </div>
+          <div class="entries">${visible}</div>
+          ${list.length > 3 ? `<div class="more">+${list.length-3}</div>` : ''}
+        `;
+        cell.addEventListener('click', () => {
+          if (!enabled) return;
+          if (multiMode) toggleSelectedDay(key); else openDay(d);
+        });
+        grid.appendChild(cell);
+      }
+    }
+
+    function openDay(d){
+      batchPanel = false;
+      selectedKey = keyOf(d);
+      $('panelDate').textContent = displayDate(d);
+      panel.classList.remove('batch');
+      panel.classList.add('on');
+      scrim.classList.add('on');
+      panel.setAttribute('aria-hidden','false');
+      setTimeMode(false);
+      renderDayList();
+      setTimeout(() => $('name').focus(), 120);
+    }
+    function openBatchPanel(){
+      if (!selectedKeys.size) return;
+      batchPanel = true;
+      selectedKey = null;
+      $('panelDate').textContent = `${selectedKeys.size}日`;
+      panel.classList.add('batch');
+      panel.classList.add('on');
+      scrim.classList.add('on');
+      panel.setAttribute('aria-hidden','false');
+      setTimeMode(false);
+      setTimeout(() => $('name').focus(), 120);
+    }
+    function closePanel(){
+      panel.classList.remove('on');
+      scrim.classList.remove('on');
+      panel.setAttribute('aria-hidden','true');
+      batchPanel = false;
+    }
+    function updateMultiUI(){
+      $('multi').classList.toggle('on', multiMode);
+      $('batchDock').classList.toggle('on', multiMode && selectedKeys.size > 0);
+      $('batchCount').textContent = `${selectedKeys.size}日`;
+    }
+    function toggleMultiMode(){
+      multiMode = !multiMode;
+      if (!multiMode) selectedKeys.clear();
+      updateMultiUI();
+      render();
+    }
+    function toggleSelectedDay(key){
+      if (selectedKeys.has(key)) selectedKeys.delete(key); else selectedKeys.add(key);
+      updateMultiUI();
+      render();
+    }
+
+    function renderDayList(){
+      const list = entries.filter(e => e.date === selectedKey).sort((a,b) => (a.from || '').localeCompare(b.from || ''));
+      dayList.innerHTML = list.map(e => `
+        <div class="day-entry">
+          <div class="avatar" style="--avatar:${colorFor(e.name)}">${esc(initials(e.name))}</div>
+          <div>
+            <div class="who">${esc(e.name)}</div>
+            ${e.allDay ? '' : `<div class="when">${esc(e.from || '')}${e.to ? ` – ${esc(e.to)}` : ''}</div>`}
+            ${e.note ? `<div class="note">${esc(e.note)}</div>` : ''}
+          </div>
+          ${owned[e.id] ? `<button class="delete" data-id="${esc(e.id)}" aria-label="削除">×</button>` : '<span></span>'}
+        </div>
+      `).join('');
+      empty.classList.toggle('on', list.length === 0);
+      dayList.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        await deleteEntry(btn.dataset.id);
+      }));
+    }
+
+    function setTimeMode(on){
+      timeMode = on;
+      $('timeFields').classList.toggle('on', on);
+      $('timeToggle').classList.toggle('on', on);
+      $('timeToggle').textContent = on ? '時間指定をやめる' : '時間を指定';
+    }
+
+    async function addEntries(){
+      const name = $('name').value.trim();
+      const targets = batchPanel ? Array.from(selectedKeys).sort() : (selectedKey ? [selectedKey] : []);
+      if (!targets.length || !name) { $('name').focus(); return; }
+      const from = timeMode && $('from').value ? $('from').value : null;
+      const to = timeMode && $('to').value ? $('to').value : null;
+      const note = $('note').value.trim() || null;
+      const token = crypto.randomUUID();
+      $('save').disabled = true;
+      try {
+        const { data, error } = await db.rpc('aki_add_entries', {
+          p_event_id: eventId,
+          p_dates: targets,
+          p_name: name,
+          p_all_day: !timeMode,
+          p_start_time: from,
+          p_end_time: to,
+          p_note: note,
+          p_delete_token: token
+        });
+        if (error) throw error;
+        for (const row of (data || [])) owned[row.entry_id] = token;
+        localStorage.setItem(OWNED_KEY, JSON.stringify(owned));
+        localStorage.setItem(NAME_KEY, name);
+        $('note').value = '';
+        setTimeMode(false);
+        if (batchPanel) {
+          selectedKeys.clear();
+          multiMode = false;
+          updateMultiUI();
+          closePanel();
+        }
+        await loadEntries({silent:true});
+        if (!batchPanel && panel.classList.contains('on')) renderDayList();
+      } catch (e) {
+        showToast('追加できませんでした');
+      } finally {
+        $('save').disabled = false;
+      }
+    }
+
+    async function deleteEntry(id){
+      const token = owned[id];
+      if (!token) return;
+      try {
+        const { data, error } = await db.rpc('aki_delete_entry', {
+          p_event_id: eventId, p_entry_id: id, p_delete_token: token
+        });
+        if (error) throw error;
+        if (data) {
+          delete owned[id];
+          localStorage.setItem(OWNED_KEY, JSON.stringify(owned));
+          await loadEntries({silent:true});
+          renderDayList();
+        }
+      } catch (e) {
+        showToast('削除できませんでした');
+      }
+    }
+
+    async function shareEvent(){
+      try {
+        await navigator.clipboard.writeText(location.href);
+        showToast('URLをコピーしました');
+      } catch {
+        window.prompt('URL', location.href);
+      }
+    }
+    function newEvent(){
+      const url = new URL(location.href); url.search = ''; url.hash = '';
+      location.href = url.toString();
+    }
+    function startPolling(){
+      clearInterval(pollTimer);
+      pollTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') loadEntries({silent:true});
+      }, 15000);
+    }
+
+    $('timeToggle').addEventListener('click', () => setTimeMode(!timeMode));
+    $('save').addEventListener('click', addEntries);
+    $('multi').addEventListener('click', toggleMultiMode);
+    $('batchOpen').addEventListener('click', openBatchPanel);
+    $('prev').addEventListener('click', () => { cursor = new Date(cursor.getFullYear(), cursor.getMonth()-1, 1); render(); });
+    $('next').addEventListener('click', () => { cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1); render(); });
+    $('today').addEventListener('click', () => { const d = new Date(); cursor = new Date(d.getFullYear(), d.getMonth(), 1); render(); });
+    $('close').addEventListener('click', closePanel);
+    $('share').addEventListener('click', shareEvent);
+    $('newEvent').addEventListener('click', newEvent);
+    scrim.addEventListener('click', closePanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && eventId) loadEntries({silent:true}); });
+
+    init();
+  </script>
+
+</body>
+</html>
